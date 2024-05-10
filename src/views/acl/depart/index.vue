@@ -1,0 +1,355 @@
+<template>
+  <div class="container">
+    <!-- 搜索区域 -->
+    <div class="header card">
+      <el-form :inline="true" :model="formInline" ref="searchFormRef" class="form-inline">
+        <div>
+          <el-form-item label-width="80px" prop="user">
+            <template #label>
+              <div class="label-title">
+                <div>名称</div>
+                <el-tooltip class="box-item" effect="dark" content="Top Left prompts info" placement="top-start">
+                  <QuestionFilled width="16px" color="#999" class="title-name"></QuestionFilled>
+                </el-tooltip>
+              </div>
+            </template>
+            <el-input v-model="formInline.user" placeholder="请输入名称" clearable />
+          </el-form-item>
+          <el-form-item label="类别" prop="region">
+            <el-select v-model="formInline.region" placeholder="请选择类别" clearable>
+              <el-option label="Zone one" value="shanghai" />
+              <el-option label="Zone two" value="beijing" />
+            </el-select>
+          </el-form-item>
+          <el-form-item label="日期" prop="date">
+            <el-date-picker v-model="formInline.date" type="date" placeholder="请选择日期" clearable />
+          </el-form-item>
+        </div>
+        <el-form-item>
+          <el-button type="primary" icon="Search" @click="onSubmit">搜索</el-button>
+          <el-button icon="Refresh" @click="onReset">重置</el-button>
+        </el-form-item>
+      </el-form>
+    </div>
+    <!-- 内容区域 -->
+    <div class="content card card-1">
+      <div class="content-header">
+        <el-button type="primary" icon="CirclePlus" @click="addApply">新增部门</el-button>
+        <el-button icon="Download" @click="exportData">导出数据</el-button>
+        <el-button type="danger" icon="Delete" @click="allDelete" :disabled="allDelDisabled">批量删除</el-button>
+      </div>
+      <el-table id="my-table" :data="tableData" style="width: 100%" border stripe
+        @selection-change="handleSelectionChange" row-key="id" default-expand-all>
+        <el-table-column type="selection" width="55" />
+        <el-table-column property="id" label="编号" width="120" />
+        <el-table-column property="name" label="名称" width="120" show-overflow-tooltip />
+        <el-table-column property="createtime" label="创建时间" width="200" show-overflow-tooltip />
+        <el-table-column property="desc" label="描述" show-overflow-tooltip />
+        <el-table-column property="status" label="状态" width="80">
+          <template #default="scope">
+            <el-switch v-model="scope.row.status" />
+          </template>
+        </el-table-column>
+        <el-table-column fixed="right" label="操作" width="120" v-if="exportFlag">
+          <template #default>
+            <el-button link type="primary" size="small" @click="handleClick">编辑</el-button>
+            <el-button link type="danger" size="small">删除</el-button>
+          </template>
+        </el-table-column>
+      </el-table>
+      <div class="content-footer">
+        <el-pagination background v-model:current-page="currentPage" v-model:page-size="pageSize"
+          :page-sizes="[10, 20, 30, 40]" :disabled="false" layout="total, sizes, prev, pager, next, jumper" :total="100"
+          @size-change="handleSizeChange" @current-change="handleCurrentChange" />
+      </div>
+    </div>
+    <!-- 新增对话框 -->
+    <el-dialog v-model="addFormVisible" title="新增部门">
+      <el-form ref="addFormRef" :model="addForm" :rules="addRules" label-width="120px" class="add-ruleForm" status-icon>
+        <el-form-item label="部门层级" prop="name">
+          <el-radio-group v-model="addForm.level" @change="changeLevel">
+            <el-radio label="一级" />
+            <el-radio label="二级" />
+            <el-radio label="三级" />
+          </el-radio-group>
+        </el-form-item>
+        <el-form-item label="上级部门" prop="name" v-show="levelFlag">
+          <el-select v-model="value" placeholder="请选择">
+            <!-- <el-option v-for="item in options" :key="item.value" :label="item.label" :value="item.value"
+              :disabled="item.disabled" /> -->
+          </el-select>
+        </el-form-item>
+        <el-form-item label="部门名称" prop="name">
+          <el-input placeholder="请输入部门名称"></el-input>
+        </el-form-item>
+        <el-form-item label="部门描述" prop="name">
+          <el-input :rows="3" type="textarea" placeholder="请输入部门描述"></el-input>
+        </el-form-item>
+
+      </el-form>
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="addFormVisible = false">取消</el-button>
+          <el-button type="primary" @click="submitAddForm">
+            保存
+          </el-button>
+        </span>
+      </template>
+    </el-dialog>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { reactive, ref } from 'vue'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import FileSaver from 'file-saver';
+import * as XLSX from 'xlsx';
+// import { useRouter } from 'vue-router';
+let exportFlag = ref(true);
+// let iframeSrc = ref("http://106.13.16.28:82/#/admin/design?code=wf6555bf2fe4b00d2a83a3a02c&groupId=113");
+// const $router = useRouter();
+
+let searchFormRef = ref();
+const addRules = reactive({
+  name: [
+    { required: true, message: '请输入名称', trigger: 'blur' }
+  ],
+})
+// 提交新增表单
+const submitAddForm = () => {
+  ElMessage({
+    type: 'success',
+    message: '操作成功！',
+  })
+  addFormVisible.value = false
+}
+
+// 新增请购
+const addApply = () => {
+  // $router.push({ path: '/procure/temp' })
+  addFormVisible.value = true;
+}
+
+// 新增对话框
+let levelFlag = ref(false);
+const changeLevel = (val: any) => {
+  console.log(val);
+  if(val !== '一级') {
+    levelFlag.value = true
+  }else {
+    levelFlag.value = false
+  }
+}
+let addFormVisible = ref(false);
+let addForm = reactive({
+  name: '',
+  region: '',
+  level: '一级'
+});
+
+// const addSubmit = () => {
+//   // 提交表单
+//   // 成功操作
+//   ElMessage({
+//     type: 'success',
+//     message: '操作成功！',
+//   })
+//   addFormVisible.value = false
+// }
+// 表单
+let formInline = reactive({
+  user: '',
+  region: '',
+  date: '',
+})
+
+// 搜索提交
+const onSubmit = () => {
+  console.log('submit!')
+}
+// 重置搜索
+const onReset = () => {
+  console.log('onReset!')
+  console.log(searchFormRef.value);
+
+  searchFormRef.value.resetFields()
+}
+
+// 表格
+// 数据导出
+const exportData = () => {
+  exportFlag.value = false;
+  ElMessageBox.confirm(
+    '确认导出数据?',
+    '温馨提示',
+    {
+      confirmButtonText: '确认',
+      cancelButtonText: '取消',
+      type: 'info',
+    }
+  )
+    .then(() => {
+
+      // 确认导出
+      var wb = XLSX.utils.table_to_book(document.querySelector('#my-table'));//关联dom节点
+      /* get binary string as output */
+      var wbout = XLSX.write(wb, {
+        bookType: 'xlsx',
+        bookSST: true,
+        type: 'array'
+      })
+      try {
+        FileSaver.saveAs(new Blob([wbout], {
+          type: 'application/octet-stream'
+        }), '物料表.xlsx')//自定义文件名
+        exportFlag.value = true;
+      } catch (e) {
+        if (typeof console !== 'undefined') console.log(e, wbout);
+        exportFlag.value = true;
+      }
+      return wbout;
+    }).catch(() => {
+      exportFlag.value = true;
+    })
+}
+let allDelDisabled = ref(true);
+// 选择项发生变化
+const handleSelectionChange = (val: any) => {
+  console.log(val);
+  if (val.length > 0) {
+    allDelDisabled.value = false;
+  } else {
+    allDelDisabled.value = true;
+  }
+}
+// 批量删除
+const allDelete = () => {
+  ElMessageBox.confirm(
+    '此操作将删除选中数据，是否确认?',
+    '警告',
+    {
+      confirmButtonText: '确认',
+      cancelButtonText: '取消',
+      type: 'warning',
+    }
+  )
+    .then(() => {
+      ElMessage({
+        type: 'success',
+        message: '删除成功！',
+      })
+    })
+}
+
+const handleClick = () => {
+  console.log('click')
+}
+
+// 院内码，物料名称，简称，品牌，规格，单位
+const tableData: reagentList[] = [
+  {
+    id: '10001',
+    name: '检验科',
+    createtime: '2022.01.01 12:00',
+    desc: '这是一段部门描述',
+    status: false,
+    children: [
+      {
+        id: '100011',
+        name: '检验科-1',
+        createtime: '2022.02.01 12:00',
+        desc: '这是一段检验科子部门描述',
+        status: false,
+      },
+      {
+        id: '100012',
+        name: '检验科-2',
+        createtime: '2022.03.01 12:00',
+        desc: '这是一段检验科子部门描述',
+        status: true,
+      },
+    ]
+  },
+  {
+    id: '10002',
+    name: '仓管部',
+    createtime: '2022.01.01 12:00',
+    desc: '这是一段部门描述',
+    status: false,
+  },
+  {
+    id: '10003',
+    name: '采购部',
+    createtime: '2022.01.01 12:00',
+    desc: '这是一段部门描述',
+    status: false,
+    children: [
+      {
+        id: '100031',
+        name: '采购部-1',
+        createtime: '2022.02.01 12:00',
+        desc: '这是一段采购部子部门描述',
+        status: false,
+      },
+      {
+        id: '100032',
+        name: '采购部-2',
+        createtime: '2022.03.01 12:00',
+        desc: '这是一段采购部子部门描述',
+        status: true,
+      },]
+  },
+
+
+]
+
+// 分页
+let currentPage = ref(1);
+let pageSize = ref(10);
+const handleSizeChange = (val: number) => {
+  console.log(`${val} items per page`)
+}
+const handleCurrentChange = (val: number) => {
+  console.log(`current page: ${val}`)
+}
+</script>
+
+<style scoped lang="scss">
+.container {
+  .header {
+    padding-top: 18px;
+    margin-bottom: 15px;
+
+    .label-title {
+      display: flex;
+      align-items: center;
+
+      .title-name {
+        margin-left: 5px;
+        cursor: pointer;
+      }
+    }
+
+    .form-inline {
+      display: flex;
+      justify-content: space-between;
+    }
+
+  }
+
+  .content {
+    .content-header {
+      margin-bottom: 20px;
+    }
+
+    .el-table {
+      margin-bottom: 20px;
+    }
+
+    .content-footer {
+      display: flex;
+      // justify-content: flex-end;
+    }
+  }
+}
+</style>

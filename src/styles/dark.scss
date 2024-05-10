@@ -1,0 +1,51 @@
+
+/* 定义根作用域下的变量 */
+:root {
+  --theme-font: #333;
+  --theme-light-font: #999;
+  --theme-background: #fff;
+  --main-background: #f2f3f5;
+  --card-border: #e4e7ed;
+  // 左侧菜单
+  --menu-bg-color: #001529;
+  --menu-text-color: #ddd;
+  --el-menu-active-color: #409eff;
+  --el-menu-active-bg-color: #dfeeff;
+  // 登录页
+  --login-bg-color: #eee;
+  --login-font-color: #34495e;
+  --login-bg-inner-color: rgb(255 255 255 / 80%);
+  
+}
+/* 更改dark类名下变量的取值 */
+.dark{
+  --theme-font: #fff;
+  --theme-light-font: #ccc;
+  --theme-background: #0a0a0a;
+  --main-background: #0a0a0a;
+  --card-border: #222;
+  // 左侧菜单
+  --menu-bg-color: #0a0a0a;
+  --menu-text-color: #fff;
+  --el-menu-active-color: #fff;
+  --el-menu-active-bg-color: #0a0a0a;
+  // 登录页
+  --login-bg-color: #191919;
+  --login-font-color: #eee;
+  --login-bg-inner-color: rgb(0 0 0 / 80%);
+}
+/* 更改pink类名下变量的取值 */
+.pink{
+  --theme-color: #fff;
+  --theme-background: pink;
+}
+
+.box {
+  transition: all .2s;
+  width: 100px;
+  height: 100px;
+  // border: 1px solid #000;
+  /* 使用变量 */
+  color: var(--theme-color);
+  background: var(--theme-background);
+}

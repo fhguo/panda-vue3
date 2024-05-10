@@ -1,0 +1,36 @@
+@import './reset.scss';
+@import './dark.scss';
+
+// 定义全局样式
+.flx-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+// 内容card区域
+.card {
+  box-sizing: border-box;
+  padding: 0 20px;
+  min-height: 40px;
+  overflow-x: hidden;
+  background-color: var(--theme-background);
+  border: 1px solid var(--card-border);
+  border-radius: 6px;
+  box-shadow: 0 0 12px rgb(0 0 0 / 5%);
+}
+.card-1 {
+  padding: 20px;
+  min-height: 550px;
+}
+
+// 滚动条
+/* 宽度和颜色 */
+/* scroll bar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-thumb {
+  background-color: #ccc;
+  border-radius: 20px;
+}
